@@ -1,0 +1,52 @@
+﻿@page "/search"
+@inject NavigationManager NavMan
+@inject IHttpService HttpService
+@using Microsoft.AspNetCore.Authorization;
+@using PRO_APBD.Client.Services;
+@using Syncfusion.Blazor.DropDowns
+@using PRO_APBD.Shared.DTOs
+@attribute [Authorize]
+
+<div class="sf-search">
+    <SfAutoComplete TItem="SearchData" TValue="string" DataSource="stocks" Placeholder="Choose a stock" AllowFiltering="true" @bind-Value="SearchedVal">
+        <AutoCompleteTemplates TItem="SearchData">
+            <ItemTemplate>
+                <span class="item">
+                    <span class="symbol"> <strong>@((context as SearchData).Symbol)</strong> </span>
+                    <span class="name"> @((context as SearchData).Name)</span>
+                    <span class="type"> @((context as SearchData).Type)</span>
+                </span>
+            </ItemTemplate>
+        </AutoCompleteTemplates>
+        <AutoCompleteFieldSettings Value="Symbol"></AutoCompleteFieldSettings>
+        <AutoCompleteEvents TItem="SearchData" TValue="string" Filtering="@Filteringhandler"></AutoCompleteEvents>
+    </SfAutoComplete>
+    <div class="button-container">
+        <button class="btn btn-primary sr-btn" @onclick="HandleClick"><i class="bi bi-search"></i> Go</button>
+        <a href="/watchlist" class="btn btn-primary sr-btn"><i class="bi bi-list-ul"></i> Watchlist</a>
+    </div>
+
+</div>
+
+@code {
+    public string SearchedVal { get; set; }
+    List<SearchData> stocks = new List<SearchData>()
+    {
+    };
+
+    async Task Filteringhandler(FilteringEventArgs args)
+    {
+        Console.WriteLine(args.Text);
+        if (args.Text.Length == 2)
+        {
+            stocks = await HttpService.GetSearchStock(args.Text);
+        }
+    }
+
+    async Task HandleClick()
+    {
+        NavMan.NavigateTo($"/dashboard/{SearchedVal}");
+    }
+
+
+}

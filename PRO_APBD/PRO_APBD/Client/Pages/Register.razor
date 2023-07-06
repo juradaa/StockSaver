@@ -1,0 +1,44 @@
+﻿@page "/register"
+@using Blazored.LocalStorage;
+@using PRO_APBD.Client.Services;
+@using PRO_APBD.Shared.DTOs;
+@inject AuthenticationStateProvider AuthSateProvider
+@inject IHttpService HttpService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+
+
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<EditForm Model="userDto" OnSubmit="HandleRegistration" class="user-info">
+
+    <label for="username">Name</label>
+    <InputText id="username" @bind-Value="userDto.Username" class="form-control" />
+    <label for="password">Password</label>
+    <InputText id="password" @bind-Value="userDto.Password" type="password" class="form-control" />
+    <label for="repeat">Password</label>
+    <InputText id="repeat" @bind-Value="userDto.RepeatPassword" type="password" class="form-control" />
+    <label for="email">Name</label>
+    <InputText id="email" @bind-Value="userDto.Email" type="email" class="form-control" />
+
+    <button type="submit" class="btn btn-primary mid">Log in</button>
+</EditForm>
+
+
+@code {
+    UserRegistrationDto userDto = new UserRegistrationDto();
+    string? error;
+    async Task HandleRegistration()
+    {
+        var response = await HttpService.RegisterUser(userDto);
+        if(!response.IsSuccessStatusCode)
+        {
+            error = $"An error occured. Error code: {response.StatusCode.ToString()}";
+            return;
+        }
+        NavigationManager.NavigateTo("/login");
+    }
+}

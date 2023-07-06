@@ -1,0 +1,40 @@
+﻿@using Syncfusion.Blazor.Charts
+@using PRO_APBD.Shared.DTOs
+@using PRO_APBD.Client.Services
+@inject IHttpService HttpService
+
+@if(stocks is null)
+{
+    <div clas="alert alert-info">loading</div>
+}else if(stocks.Count == 0)
+{
+    <div class="alert alert-danger">loading</div>
+}else if (stocks.Count != 0)
+{
+    <SfStockChart>
+        <StockChartSeriesCollection>
+            
+            <StockChartSeries Type="@ChartSeriesType.HiloOpenClose" DataSource="@stocks"
+                          XName="Date" High="High" Open="Open" Low="Low" Close="Close" Volume="Volume">
+
+            </StockChartSeries>
+        </StockChartSeriesCollection>
+    </SfStockChart>
+}
+
+
+
+
+@code {
+    [Parameter]
+    public string Ticker { get; set; }
+    public List<ChartDataDto>? stocks;
+
+    override protected async Task OnParametersSetAsync()
+    {
+        stocks = await HttpService.GetChartData(Ticker);
+        Console.WriteLine(stocks.Count);
+    }
+
+
+}

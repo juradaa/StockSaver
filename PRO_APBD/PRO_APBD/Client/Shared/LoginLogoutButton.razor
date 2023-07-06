@@ -1,0 +1,27 @@
+﻿@using Blazored.LocalStorage;
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
+
+<AuthorizeView>
+    <Authorized>
+        <button @onclick="Logout" class="btn btn-primary">Log out</button>
+    </Authorized>
+    <NotAuthorized>
+        <button @onclick="Login" class="btn btn-danger">Log in</button>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    void Login()
+    {
+        NavigationManager.NavigateTo("login");
+    }
+
+    async Task Logout()
+    {
+        await LocalStorage.RemoveItemAsync("token");
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+    }
+}

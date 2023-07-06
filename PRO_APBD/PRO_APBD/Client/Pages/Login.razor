@@ -1,0 +1,54 @@
+﻿@page "/login"
+@using Blazored.LocalStorage;
+@using PRO_APBD.Client.Services;
+@using PRO_APBD.Shared.DTOs;
+@inject AuthenticationStateProvider AuthSateProvider
+@inject IHttpService HttpService
+@inject ILocalStorageService LocalStorage
+
+
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+<div class="mid">
+    <h1 class="mid">Login</h1>
+    <EditForm Model="userDto" OnSubmit="HandleLogin" class="user-info">
+
+        <label for="username">Name</label>
+        <InputText id="username" @bind-Value="userDto.Username" class="form-control" />
+        <label for="password">Password</label>
+        <InputText id="password" @bind-Value="userDto.Password" type="password" class="form-control" />
+        <button type="submit" class="btn btn-primary mid">Log in</button>
+    </EditForm>
+    <a href="/register" class="mid">Register</a>
+</div>
+
+@code {
+    UserAuthDto userDto = new UserAuthDto();
+    string? error;
+
+    async Task HandleLogin()
+    {
+        var tokenResponse = await HttpService.LoginUser(userDto);
+        if (tokenResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            error = "Failed to log in. Incorrect username or password";
+            return;
+        }
+        if (!tokenResponse.IsSuccessStatusCode)
+        {
+            error = $"An error occured. Error code: {tokenResponse.StatusCode.ToString()}";
+            return;
+        }
+
+        var responseString = await tokenResponse.Content.ReadAsStringAsync();
+
+        var loginDto = System.Text.Json.JsonSerializer.Deserialize<LoginResponseDto>(responseString, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var token = loginDto.Token;
+        Console.WriteLine(token);
+        await LocalStorage.SetItemAsync("token", token);
+        await AuthSateProvider.GetAuthenticationStateAsync();
+    }
+
+}

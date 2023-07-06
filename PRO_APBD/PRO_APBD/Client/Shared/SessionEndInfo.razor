@@ -1,0 +1,65 @@
+﻿@using PRO_APBD.Shared.DTOs
+@using PRO_APBD.Client.Services
+@inject IHttpService HttpService
+
+
+@if (error)
+{
+    <div class="alert alert-danger"></div>
+}else if( Info is not null)
+{
+    <div>
+        From: @Info.From
+    </div>
+
+    <div>
+        Symbol: @Info.Symbol
+    </div>
+
+    <div>
+        Open: @Info.Open
+    </div>
+
+    <div>
+        High: @Info.High
+    </div>
+
+    <div>
+        Low: @Info.Low
+    </div>
+    <div>
+        Close: @Info.Close
+    </div>
+    <div>
+        Volume: @Info.Volume
+    </div>
+    <div>
+        After hours: @Info.AfterHours
+    </div>
+    <div>
+        Pre market: @Info.PreMarket
+    </div>
+}
+else
+{
+    <div>Loading data...</div>
+}
+
+
+
+
+@code {
+    public StockSessionEndDto? Info { get; set; }
+    [Parameter]
+    public string Ticker { get; set; }
+    Boolean error;
+
+    override protected async Task OnParametersSetAsync()
+    {
+        Info = await HttpService.GetSessionEnd(Ticker);
+        if(Info is null)
+        {
+            error = true;
+        }
+    }
+}

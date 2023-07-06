@@ -1,0 +1,154 @@
+﻿@page "/watchlist"
+@using PRO_APBD.Shared.DTOs;
+@using PRO_APBD.Client.Services;
+@inject IHttpService HttpService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h3>Subscribed</h3>
+@if (error)
+{
+    <div>error</div>
+}
+else if (stocks is null)
+{
+    <div>Loading data</div>
+}
+else
+{
+    <table>
+        <thead>
+        <th>Logo</th>
+        <th @onclick=@(()=>Sort("Ticker"))>Ticker</th>
+        <th @onclick=@(()=>Sort("Name"))>Name</th>
+        <th @onclick=@(()=>Sort("Country"))>Country</th>
+        <th @onclick=@(()=>Sort("Currency"))>Currency</th>
+        <th>Homepage</th>
+        <th>Options</th>
+        </thead>
+        <tbody>
+            @foreach (var stock in displayed!)
+            {
+                <tr>
+                    <td><img src="@stock.ImageUrl" alt="company logo"></td>
+                    <td @onclick=@(()=>Filter("Ticker", stock.Ticker))>@stock.Ticker</td>
+                    <td @onclick=@(()=>Filter("Name", stock.Name))>@stock.Name</td>
+                    <td @onclick=@(()=>Filter("Country", stock.Country))>@stock.Country</td>
+                    <td @onclick=@(()=>Filter("Currency", stock.Currency))>@stock.Currency</td>
+                    <td><a href="@stock.HomepageUrl">link</a></td>
+                    <td><button @onclick=@(()=>Delete(stock.Ticker))>Remove</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    for(int i = 1; i-1 < (processed!.Count()+9)/10; i++)
+    {
+        var j = i;
+
+        <button class="btn btn-primary" @onclick=@(()=>ShowPage(j))>@j</button>
+
+    }
+}
+
+
+
+@code {
+    List<GeneralStockInfoDto>? stocks;
+    List<GeneralStockInfoDto>? processed;
+    List<GeneralStockInfoDto>? displayed;
+    bool error;
+    string name;
+    class MyWrapper
+    {
+        int i;
+    }
+
+    private (string, SortDirection?) _currentSort;
+    enum SortDirection
+    {
+        DESC,
+
+        ASC
+    }
+
+    override protected async Task OnInitializedAsync()
+    {
+        _currentSort = ("", null);
+        _filteredBy = "";
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        name = user.Identity!.Name;
+        Console.WriteLine($"name {name}");
+        try
+        {
+
+            stocks = await HttpService.GetSubsFor(name);
+            stocks.ForEach(stock => stock.ImageUrl += "?apiKey=M429q3E2luKIkB1VsIeQzP82DBw7VNm1");
+            processed = stocks;
+            displayed = processed.Take(10).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            error = true;
+        }
+    }
+
+    private void Sort(string columnName)
+    {
+        if(columnName == _currentSort.Item1)
+        {
+            _currentSort = (columnName, _currentSort.Item2 == SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC);
+        }
+        else
+        {
+            _currentSort = (columnName, SortDirection.DESC);
+        }
+        switch (_currentSort.Item2)
+        {
+            case SortDirection.ASC:
+                stocks = stocks!.OrderBy(e => e.GetType().GetProperty(columnName)?.GetValue(e)).ToList();
+                break;
+            case SortDirection.DESC:
+                stocks = stocks!.OrderByDescending(e => e.GetType().GetProperty(columnName)?.GetValue(e)).ToList();
+                break;
+
+        }
+        processed = stocks;
+        displayed = processed!.Take(10).ToList();
+
+    }
+
+    string _filteredBy;
+    private void Filter(string column, string value)
+    {
+        Console.WriteLine(column);
+        if(_filteredBy == column)
+        {
+            processed = stocks;
+            displayed = stocks!.Take(10).ToList();
+            _filteredBy = "";
+            return;
+        }
+
+        processed = stocks!.Where(s =>((string) s.GetType().GetProperty(column)?.GetValue(s)) == value).ToList();
+        processed.ForEach(p => Console.WriteLine(p.Ticker));
+        displayed = processed.Take(10).ToList();
+        _filteredBy = column;
+    }
+
+
+    private void ShowPage(int i)
+    {
+        displayed = processed!.Skip(10 * (i - 1)).Take(10).ToList();
+    }
+
+    private async Task Delete(string ticker)
+    {
+        await HttpService.DeleteSubscription(ticker, name);
+        stocks = stocks!.Where(stock => stock.Ticker != ticker).ToList();
+        processed = stocks;
+        displayed = stocks;
+    }
+
+}

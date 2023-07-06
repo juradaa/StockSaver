@@ -1,0 +1,39 @@
+﻿@using PRO_APBD.Shared.DTOs
+@using PRO_APBD.Client.Services
+@inject IHttpService HttpService
+
+@if (error)
+{
+    <div class="alert alert-danger"></div>
+}
+else if (newsList is null)
+{
+    <div>Loading data..</div>
+}
+else
+{
+    @foreach (var news in newsList)
+    {
+        <div>@news.PublisherName</div>
+        <div>
+            <span><a href="@news.AritcleUrl">@news.Title</a></span>
+            <span>@news.PublishDate</span>
+        </div>
+
+    }
+}
+@code {
+    [Parameter]
+    public string  Ticker { get; set; }
+    bool error;
+    List<NewsDto>? newsList;
+    override protected async Task OnParametersSetAsync()
+
+    {
+        newsList = await HttpService.GetNews(Ticker);
+        if(newsList is null)
+        {
+            error = true;
+        }
+    }
+}

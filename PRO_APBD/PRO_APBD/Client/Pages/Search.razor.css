@@ -1,0 +1,37 @@
+﻿
+.item{
+    display: table;
+    width:100%;
+    margin: auto;
+}
+
+.symbol, .name, .type{
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.symbol, .type{
+    width:25%;
+}
+
+.name{
+    width: 50%;
+}
+
+.sf-search{
+    max-width: 300px;
+    margin: 0px auto;
+}
+
+.button-container{
+    display: flex;
+    justify-content:stretch;
+    align-items:center
+}
+
+.sr-btn{
+    display: inline;
+    flex: 1 1 100px;
+    width: 100%;
+}
+

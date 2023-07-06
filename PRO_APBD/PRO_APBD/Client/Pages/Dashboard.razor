@@ -1,0 +1,120 @@
+﻿@page "/dashboard/{ticker}"
+@using Microsoft.AspNetCore.Authorization;
+@using Syncfusion.Blazor.Layouts
+@using PRO_APBD.Shared.DTOs
+@using PRO_APBD.Client.Services
+@inject IHttpService HttpService
+@inject IConfiguration Config
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavMan
+
+@attribute [Authorize]
+<Search></Search>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="alert alert-danger">Could not load</div>
+}
+else if (GeneralInfo is null)
+{
+    <div>Loading data...</div>
+}
+else
+{
+    <SfDashboardLayout Columns="3">
+        <DashboardLayoutPanels>
+            <DashboardLayoutPanel Column="0">
+                <HeaderTemplate>Photo</HeaderTemplate>
+                <ContentTemplate>
+                    <img src="@ImageUrl" alt="Company logo" />
+                </ContentTemplate>
+            </DashboardLayoutPanel>
+            <DashboardLayoutPanel Column="1" SizeX="2">
+                <HeaderTemplate>General information</HeaderTemplate>
+                <ContentTemplate>
+                    <div class="main-dashboard-content">
+                        <div>Name: @GeneralInfo.Name</div>
+                        <div>Ticker: @GeneralInfo.Ticker</div>
+                        <div>Country: @GeneralInfo.Country</div>
+                        <div>Currency: @GeneralInfo.Currency</div>
+                        <div><a href="@GeneralInfo.HomepageUrl">Homepage</a></div>
+                        <button @onclick="AddToWatchlist">Add to watchlist</button>
+                    </div>
+                </ContentTemplate>
+            </DashboardLayoutPanel>
+            <DashboardLayoutPanel Row="1" SizeX="3" Column="0">
+                <HeaderTemplate>Stock chart</HeaderTemplate>
+                <ContentTemplate>
+                    <StockChart Ticker="@Ticker"></StockChart>
+                </ContentTemplate>
+            </DashboardLayoutPanel>
+            <DashboardLayoutPanel Row="2" Column="0">
+                <HeaderTemplate>End of session</HeaderTemplate>
+                <ContentTemplate>
+                    <div class="main-dashboard-content">
+
+                        <SessionEndInfo Ticker="@Ticker"></SessionEndInfo>
+                    </div>
+                </ContentTemplate>
+
+            </DashboardLayoutPanel>
+            <DashboardLayoutPanel Row="2" Column="1" SizeX="2">
+                <HeaderTemplate>News</HeaderTemplate>
+                <ContentTemplate>
+                    <div class="main-dashboard-content">
+
+                        <News Ticker="@Ticker"></News>
+                    </div>
+                </ContentTemplate>
+            </DashboardLayoutPanel>
+        </DashboardLayoutPanels>
+
+    </SfDashboardLayout>
+}
+
+
+
+
+
+@code {
+    [Parameter]
+    public string Ticker { get; set; }
+    public string Error { get; set; }
+    public string ImageUrl { get; set; }
+
+
+    public GeneralStockInfoDto? GeneralInfo { get; set; }
+    override protected async Task OnParametersSetAsync()
+    {
+        Console.WriteLine("Before try");
+        try
+        {
+            GeneralInfo = await HttpService.GetGeneralInfo(Ticker);
+            Console.WriteLine("After await");
+            if (GeneralInfo is null)
+            {
+                Error = "Failed to load";
+                Console.WriteLine("GI is null");
+                return;
+            }
+            ImageUrl = GeneralInfo.ImageUrl + "?apiKey=M429q3E2luKIkB1VsIeQzP82DBw7VNm1";
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            Console.WriteLine(ex.Message);
+        }
+        Console.WriteLine("After function");
+    }
+    private async Task AddToWatchlist()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var name = user.Identity!.Name;
+        await HttpService.Subscribe(Ticker, name!);
+        NavMan.NavigateTo("/watchlist");
+
+    }
+
+
+}
